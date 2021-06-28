@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 __version__ = 1.0
 
@@ -22,7 +22,6 @@ import sys
 import imp
 import json
 import codecs
-import base64
 import netaddr
 import requests
 import pymysql as sql
@@ -49,7 +48,7 @@ class Logger:
     def check_log_file(self):
         while 1:
             if os.path.exists(self.logfile):
-                reply = raw_input("[!] Log file already exists. Overwrite or append [O|A]? ")
+                reply = input("[!] Log file already exists. Overwrite or append [O|A]? ")
                 if reply.lower().strip() == 'o':
                     with open(self.logfile, 'w'):
                         pass
@@ -65,13 +64,13 @@ class Logger:
     def writer(self, msg):
         if conf.LOGFILE and conf.LOGFILE != '':
             with codecs.open(self.logfile, 'a', encoding='utf-8') as f:
-                msg = msg.decode('UTF-8', 'ignore')
+                # msg = msg.decode('UTF-8', 'ignore')
                 f.write(msg + '\r\n')  # \r\n for notepad
         if self.stdout:
             try:
-                print msg
+                print(msg)
             except:
-                print msg.encode('ascii', 'ignore') + ' # < non-ASCII chars detected! >'
+                print(msg.encode('ascii', 'ignore') + ' # < non-ASCII chars detected! >')
 
     @staticmethod
     def debugger(msg):
@@ -88,16 +87,17 @@ class REST:
         self.password = conf.D42_PWD
         self.username = conf.D42_USER
         self.base_url = conf.D42_URL
+        self.session = requests.Session()
+        self.session.auth = (self.username, self.password)
+        self.session.headers.update({
+            'Content-Type': 'application/x-www-form-urlencoded'
+        })
 
     def uploader(self, data, url):
         payload = data
-        headers = {
-            'Authorization': 'Basic ' + base64.b64encode(self.username + ':' + self.password),
-            'Content-Type': 'application/x-www-form-urlencoded'
-        }
 
-        r = requests.post(url, data=payload, headers=headers, verify=False)
-        msg = unicode(payload)
+        r = self.session.post(url, data=payload, verify=False)
+        msg = str(payload)
         logger.writer(msg)
         msg = 'Status code: %s' % str(r.status_code)
         logger.writer(msg)
@@ -108,16 +108,11 @@ class REST:
             return r.json()
         except Exception as e:
 
-            print '\n[*] Exception: %s' % str(e)
+            print('\n[*] Exception: %s' % str(e))
             pass
 
     def fetcher(self, url):
-        headers = {
-            'Authorization': 'Basic ' + base64.b64encode(self.username + ':' + self.password),
-            'Content-Type': 'application/x-www-form-urlencoded'
-        }
-
-        r = requests.get(url, headers=headers, verify=False)
+        r = self.session.get(url, verify=False)
         return r.text
 
     def post_vrf(self, data):
@@ -177,6 +172,7 @@ class DB:
     def __init__(self):
         self.con = None
         self.default_vrf_group = conf.DEFAULT_VRF_GROUP
+        self.default_vrf_group_id = conf.DEFAULT_VRF_GROUP_ID
 
     def connect(self):
         """
@@ -414,15 +410,15 @@ class DB:
 
 def main():
     db = DB()
-    db.integrate_devices()
-    db.integrate_vrfs()
-    db.integrate_vlans()
-    db.integrate_subnets()
+    # db.integrate_devices()
+    # db.integrate_vrfs()
+    # db.integrate_vlans()
+    # db.integrate_subnets()
     db.integrate_ips()
 
 if __name__ == '__main__':
     logger = Logger(conf.LOGFILE, conf.STDOUT)
     rest = REST()
     main()
-    print '\n[!] Done!'
+    print('\n[!] Done!')
     sys.exit()

@@ -14,3 +14,4 @@ STDOUT = False  # print to STDOUT
 DEBUG = True  # write debug log
 DEBUG_LOG = 'debug.log'
 DEFAULT_VRF_GROUP = 'vrf0'
+DEFAULT_VRF_GROUP_ID = 0
